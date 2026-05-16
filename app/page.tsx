@@ -38,6 +38,8 @@ export default function Home() {
   const [date, setDate] = useState(getTodayString());
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -84,10 +86,14 @@ export default function Home() {
   }
 
   const filtered = tasks.filter((t) => {
-    if (filter === "active") return !t.completed;
-    if (filter === "done") return t.completed;
+    if (filter === "active" && t.completed) return false;
+    if (filter === "done" && !t.completed) return false;
+    if (dateFrom && t.date < dateFrom) return false;
+    if (dateTo && t.date > dateTo) return false;
     return true;
   });
+
+  const isDateFiltered = dateFrom !== "" || dateTo !== "";
 
   const sortedDates = [
     ...new Set(filtered.map((t) => t.date)),
@@ -159,20 +165,53 @@ export default function Home() {
 
         {/* フィルター */}
         {totalCount > 0 && (
-          <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-xl w-fit">
-            {(["all", "active", "done"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`text-xs font-medium px-4 py-1.5 rounded-lg transition-all duration-150 ${
-                  filter === f
-                    ? "bg-white text-gray-800 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                {f === "all" ? "すべて" : f === "active" ? "未完了" : "完了"}
-              </button>
-            ))}
+          <div className="flex flex-col gap-3 mb-5">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+              {(["all", "active", "done"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`text-xs font-medium px-4 py-1.5 rounded-lg transition-all duration-150 ${
+                    filter === f
+                      ? "bg-white text-gray-800 shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  {f === "all" ? "すべて" : f === "active" ? "未完了" : "完了"}
+                </button>
+              ))}
+            </div>
+
+            {/* 日付範囲検索 */}
+            <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-4 py-3">
+              <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="text-sm text-gray-600 bg-transparent outline-none cursor-pointer"
+              />
+              <span className="text-gray-300 text-sm">〜</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="text-sm text-gray-600 bg-transparent outline-none cursor-pointer"
+              />
+              {isDateFiltered && (
+                <button
+                  onClick={() => { setDateFrom(""); setDateTo(""); }}
+                  className="ml-auto text-gray-300 hover:text-gray-500 transition-colors"
+                  aria-label="日付絞り込みをクリア"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
